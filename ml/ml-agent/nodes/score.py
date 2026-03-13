@@ -41,6 +41,31 @@ async def score_node(state: AgentState) -> Dict[str, Any]:
 
     risk_score = base_risk + mutation_risk
 
+    # --- INJECTION POINT 2: FEDERATED BOOST ---
+    try:
+        import sys, os, hashlib
+        fednet_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        if fednet_path not in sys.path:
+            sys.path.insert(0, fednet_path)
+            
+        from federated_network.integration import FederatedNetworkAdapter
+        
+        fednet_adapter = FederatedNetworkAdapter(
+            base_url=os.getenv("FEDNET_URL", "http://127.0.0.1:8000"),
+            node_id=os.getenv("FEDNET_NODE_ID", "node-local")
+        )
+        
+        text = state.get("original_text", "")
+        import hashlib
+        claim_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        fed_boost = await fednet_adapter.get_federated_boost(claim_hash)
+        risk_score = min(risk_score + fed_boost, 1.0)
+        
+        await fednet_adapter.close()
+    except Exception as e:
+        logger.warning(f"Federated boost error: {e}")
+    # ------------------------------------------
+
     text = state.get("original_text", "").lower()
     severe_keywords = ["cure", "vaccine", "virus", "election", "fraud", "scam", "riot", "bleach", "hoax"]
     if any(k in text for k in severe_keywords):

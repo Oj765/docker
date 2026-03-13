@@ -1,7 +1,6 @@
-
-
 services:
   zookeeper:
+    container_name: zookeeper
     image: confluentinc/cp-zookeeper:7.4.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -13,6 +12,7 @@ services:
       retries: 5
 
   kafka:
+    container_name: kafka
     image: confluentinc/cp-kafka:7.4.0
     depends_on:
       zookeeper:
@@ -34,6 +34,7 @@ services:
       retries: 5
 
   kafka-setup:
+    container_name: kafka-setup
     image: confluentinc/cp-kafka:7.4.0
     depends_on:
       kafka:
@@ -50,6 +51,7 @@ services:
       echo 'Kafka topics created.'"
 
   mongo:
+    container_name: mongo
     image: mongo:6.0
     ports:
       - "27017:27017"
@@ -60,6 +62,7 @@ services:
       retries: 5
 
   redis:
+    container_name: redis
     image: redis:7.0-alpine
     ports:
       - "6379:6379"
@@ -70,6 +73,7 @@ services:
       retries: 5
 
   timescaledb:
+    container_name: timescaledb
     image: timescale/timescaledb:latest-pg15
     environment:
       POSTGRES_USER: postgres
@@ -84,6 +88,7 @@ services:
       retries: 5
 
   api:
+    container_name: api
     build: .
     ports:
       - "8000:8000"
@@ -104,6 +109,7 @@ services:
         condition: service_healthy
 
   prometheus:
+    container_name: prometheus
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
@@ -113,6 +119,7 @@ services:
       - api
 
   grafana:
+    container_name: grafana
     image: grafana/grafana:latest
     ports:
       - "3000:3000"

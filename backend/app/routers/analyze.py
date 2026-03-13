@@ -18,6 +18,19 @@ ML_AGENT_PATH = os.path.abspath(
 if ML_AGENT_PATH not in sys.path:
     sys.path.insert(0, ML_AGENT_PATH)
 
+FEDNET_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..")
+)
+if FEDNET_PATH not in sys.path:
+    sys.path.insert(0, FEDNET_PATH)
+
+from federated_network.integration import FederatedNetworkAdapter
+
+fednet_adapter = FederatedNetworkAdapter(
+    base_url=os.getenv("FEDNET_URL", "http://127.0.0.1:8000"),
+    node_id=os.getenv("FEDNET_NODE_ID", "node-local")
+)
+
 
 class AnalyzeRequest(BaseModel):
     text: str
@@ -112,6 +125,21 @@ async def analyze_claim(body: AnalyzeRequest, request: Request):
     verdict = final_state.get("verdict")
     if not verdict:
         return AnalyzeResponse(success=False, data=None, error="ML pipeline returned no verdict.")
+
+    # INJECTION POINT 1 - FEDERATED NETWORK
+    import asyncio
+    try:
+        asyncio.create_task(
+            fednet_adapter.publish_detection(
+                claim_text_normalized=body.text,
+                embedding=[],
+                confidence=float(verdict.get("confidence", 0.0)),
+                category=str(verdict.get("category", "other")),
+                verdict_label=str(verdict.get("label", "UNVERIFIED"))
+            )
+        )
+    except Exception as e:
+        logger.warning(f"Error publishing to federated network: {e}")
 
     # Save the full claim document to MongoDB
     db = request.app.mongodb

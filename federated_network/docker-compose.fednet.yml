@@ -1,0 +1,131 @@
+# docker-compose.fednet.yml
+# Spins up the federated network service alongside the infrastructure
+# it needs (Redis, Kafka, MongoDB). Run alongside the main platform compose.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.fednet.yml up
+
+version: "3.9"
+
+services:
+
+  # ── Federated Network Node ─────────────────────────────────────────────────
+  fednet:
+    build:
+      context: ./services/federated_network
+      dockerfile: Dockerfile
+    image: misinfo-shield/fednet:latest
+    container_name: misinfo_fednet
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    environment:
+      FEDNET_NODE_ID:                   "${FEDNET_NODE_ID:-node-local-dev}"
+      FEDNET_NODE_DISPLAY_NAME:         "${FEDNET_NODE_DISPLAY_NAME:-Local Dev Node}"
+      FEDNET_ORG_TYPE:                  "${FEDNET_ORG_TYPE:-NGO}"
+      FEDNET_NODE_PUBLIC_URL:           "${FEDNET_NODE_PUBLIC_URL:-http://fednet:8100}"
+      FEDNET_REDIS_URL:                 "redis://redis:6379/1"
+      FEDNET_KAFKA_BOOTSTRAP_SERVERS:   "kafka:9092"
+      FEDNET_MONGODB_URI:               "mongodb://mongo:27017"
+      FEDNET_MONGODB_DB:                "misinfo_shield"
+      FEDNET_MIN_CONFIDENCE_TO_PUBLISH: "0.60"
+      FEDNET_DEFAULT_SIGNAL_TTL_SECONDS: "3600"
+      FEDNET_MAX_SIGNALS_PER_NODE_PER_MINUTE: "100"
+      FEDNET_KAFKA_THREAT_PRIOR_TOPIC:  "threat.prior.update"
+    secrets:
+      - fednet_private_key
+      - fednet_public_key
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - misinfo_net
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8100/fednet/v1/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Redis (shared with main platform) ─────────────────────────────────────
+  # If already defined in main docker-compose.yml, remove this block
+  redis:
+    image: redis:7.2-alpine
+    container_name: misinfo_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - misinfo_net
+
+  # ── Kafka (shared with main platform) ─────────────────────────────────────
+  # If already defined in main docker-compose.yml, remove this block
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: misinfo_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - misinfo_net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: misinfo_kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - misinfo_net
+
+  # ── MongoDB (shared with main platform) ───────────────────────────────────
+  # If already defined in main docker-compose.yml, remove this block
+  mongo:
+    image: mongo:7.0
+    container_name: misinfo_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - misinfo_net
+
+secrets:
+  fednet_private_key:
+    file: ./secrets/fednet_private_key.pem
+  fednet_public_key:
+    file: ./secrets/fednet_public_key.pem
+
+volumes:
+  mongo_data:
+
+networks:
+  misinfo_net:
+    driver: bridge

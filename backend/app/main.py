@@ -11,6 +11,16 @@ from app.services.kafka_consumer import kafka_consumer
 from app.services.redis_dedup import redis_dedup
 from prometheus_fastapi_instrumentator import Instrumentator
 from app.services.timescaledb_service import timescaledb_service
+import sys
+import os
+
+FEDNET_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if FEDNET_PATH not in sys.path:
+    sys.path.insert(0, FEDNET_PATH)
+try:
+    from federated_network.app import app as fednet_app
+except ImportError:
+    fednet_app = None
 
 
 logging.basicConfig(level=logging.INFO)
@@ -86,6 +96,9 @@ app.include_router(webhooks.router)
 app.include_router(analyze.router)
 app.include_router(graph.router)
 app.include_router(geo.router, prefix="/geo", tags=["geo"])
+
+if fednet_app:
+    app.mount("/fednet", fednet_app)
 
 @app.get("/health")
 async def health_check():

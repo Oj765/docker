@@ -9,7 +9,8 @@ import {
   Settings,
   ShieldCheck,
   ShieldAlert,
-  Globe
+  Globe,
+  Network
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
@@ -24,6 +25,7 @@ const Sidebar = () => {
     { icon: <BellRing size={20} />, label: 'Alert Configuration', path: '/alerts' },
     { icon: <History size={20} />, label: 'Audit Log', path: '/audit' },
     { icon: <Globe size={20} />, label: 'Geo Intelligence', path: '/geo' },
+    { icon: <Network size={20} />, label: 'Federated Network', path: '/federated' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
   ];
 

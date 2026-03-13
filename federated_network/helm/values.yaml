@@ -1,0 +1,105 @@
+# helm/fednet/values.yaml
+# Helm chart values for the Federated Network service.
+# Override per environment via values-prod.yaml, values-staging.yaml.
+
+replicaCount: 2
+
+image:
+  repository: gcr.io/misinfo-shield/fednet
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8100
+
+# ── Environment ───────────────────────────────────────────────────────────────
+env:
+  FEDNET_NODE_ID:                       "node-prod-01"
+  FEDNET_NODE_DISPLAY_NAME:             "MisInfo Shield Production"
+  FEDNET_ORG_TYPE:                      "NGO"
+  FEDNET_NODE_PUBLIC_URL:               "https://fednet.misinfo-shield.example.com"
+  FEDNET_REDIS_URL:                     "redis://redis-master:6379/1"
+  FEDNET_KAFKA_BOOTSTRAP_SERVERS:       "kafka-headless:9092"
+  FEDNET_MONGODB_URI:                   "mongodb://mongo-headless:27017"
+  FEDNET_MONGODB_DB:                    "misinfo_shield"
+  FEDNET_MIN_CONFIDENCE_TO_PUBLISH:     "0.60"
+  FEDNET_DEFAULT_SIGNAL_TTL_SECONDS:    "3600"
+  FEDNET_REPLAY_WINDOW_SECONDS:         "300"
+  FEDNET_MAX_SIGNALS_PER_NODE_PER_MINUTE: "100"
+  FEDNET_KAFKA_THREAT_PRIOR_TOPIC:      "threat.prior.update"
+  FEDNET_HTTP_PUBLISH_TIMEOUT_SECONDS:  "5"
+  FEDNET_HTTP_MAX_RETRIES:              "3"
+
+# ── Secrets (reference existing Kubernetes secrets) ───────────────────────────
+secretEnv: []
+  # - name: FEDNET_ED25519_PRIVATE_KEY_PATH
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: fednet-keys
+  #       key: private_key_path
+
+volumeMounts:
+  - name: fednet-keys
+    mountPath: /run/secrets
+    readOnly: true
+
+volumes:
+  - name: fednet-keys
+    secret:
+      secretName: fednet-keys
+      items:
+        - key: private_key_pem
+          path: fednet_private_key.pem
+        - key: public_key_pem
+          path: fednet_public_key.pem
+
+# ── Resources ─────────────────────────────────────────────────────────────────
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# ── Autoscaling ───────────────────────────────────────────────────────────────
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# ── Probes ────────────────────────────────────────────────────────────────────
+livenessProbe:
+  httpGet:
+    path: /fednet/v1/health
+    port: 8100
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /fednet/v1/health
+    port: 8100
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+# ── Ingress ───────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: fednet.misinfo-shield.example.com
+      paths:
+        - path: /fednet
+          pathType: Prefix
+  tls:
+    - secretName: fednet-tls
+      hosts:
+        - fednet.misinfo-shield.example.com

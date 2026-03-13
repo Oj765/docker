@@ -10,6 +10,7 @@ import Analytics from './pages/Analytics';
 import AlertConfiguration from './pages/AlertConfiguration';
 import AuditLog from './pages/AuditLog';
 import GeoIntelligence from './pages/GeoIntelligence';
+import FederatedNetwork from './pages/FederatedNetwork';
 import './App.css';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
               <Route path="/narrative" element={<NarrativeGraph />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/geo" element={<GeoIntelligence />} />
+              <Route path="/federated" element={<FederatedNetwork />} />
               <Route path="/alerts" element={<AlertConfiguration />} />
               <Route path="/audit" element={<AuditLog />} />
               <Route path="/settings" element={<div className="p-32"><h1>Settings Page</h1></div>} />
