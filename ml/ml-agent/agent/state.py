@@ -81,6 +81,7 @@ class AgentState(TypedDict, total=False):
 
     # --- Output ---
     verdict: Optional[VerdictInfo]
+    counter_narrative: NotRequired[Dict[str, Any]]
     reasoning_chain: List[str]
     should_respond: bool
     review_required: bool

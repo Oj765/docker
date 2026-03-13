@@ -11,6 +11,7 @@ from nodes.score import score_node
 from nodes.enrich import enrich_node
 from nodes.guardrail import guardrail_node
 from nodes.verdict import verdict_node
+from nodes.counter_narrative import counter_narrative_node
 from nodes.output import output_node
 from nodes.deepfake_node import deepfake_node
 
@@ -28,11 +29,12 @@ def create_graph():
     workflow.add_node("enrich", enrich_node)
     workflow.add_node("guardrail", guardrail_node)
     workflow.add_node("verdict", verdict_node)
+    workflow.add_node("counter_narrative", counter_narrative_node)
     workflow.add_node("output", output_node)
 
     # Pipeline flow:
     # ingest -> translate -> deepfake -> extract -> dedup -> verify ->
-    # score -> enrich -> guardrail -> verdict -> output
+    # score -> enrich -> guardrail -> verdict -> counter_narrative -> output
     workflow.add_edge("ingest", "translate")
     workflow.add_edge("translate", "deepfake")
     workflow.add_edge("deepfake", "extract")
@@ -42,7 +44,8 @@ def create_graph():
     workflow.add_edge("score", "enrich")
     workflow.add_edge("enrich", "guardrail")
     workflow.add_edge("guardrail", "verdict")
-    workflow.add_edge("verdict", "output")
+    workflow.add_edge("verdict", "counter_narrative")
+    workflow.add_edge("counter_narrative", "output")
     workflow.add_edge("output", END)
 
     workflow.set_entry_point("ingest")

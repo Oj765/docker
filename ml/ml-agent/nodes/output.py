@@ -29,6 +29,7 @@ async def _append_audit_record(verdict: Dict[str, Any], state: AgentState) -> st
         "review_required": state.get("review_required", True),
         "response_text": state.get("response_text", ""),
         "verdict": verdict,
+        "counter_narrative": state.get("counter_narrative", None)
     }
 
     with open(audit_path, "a", encoding="utf-8") as fh:
