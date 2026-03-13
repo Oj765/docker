@@ -14,6 +14,11 @@ from app.services.timescaledb_service import timescaledb_service
 import sys
 import os
 
+try:
+    from app.services import deepfake_db
+except ImportError:
+    deepfake_db = None
+
 FEDNET_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if FEDNET_PATH not in sys.path:
     sys.path.insert(0, FEDNET_PATH)
@@ -53,6 +58,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Kafka services...")
     await kafka_producer.start()
     await kafka_consumer.start()
+
+    if deepfake_db:
+        logger.info("Initializing Deepfake DB...")
+        await deepfake_db.setup()
 
     yield
 
@@ -96,6 +105,14 @@ app.include_router(webhooks.router)
 app.include_router(analyze.router)
 app.include_router(graph.router)
 app.include_router(geo.router, prefix="/geo", tags=["geo"])
+
+try:
+    from app.routers.deepfake import router as deepfake_internal_router
+    from app.routers.deepfake_public import router as deepfake_public_router
+    app.include_router(deepfake_internal_router, prefix="/internal/deepfake", tags=["deepfake-internal"])
+    app.include_router(deepfake_public_router, prefix="/deepfake", tags=["deepfake"])
+except ImportError as e:
+    logger.warning(f"Could not load deepfake routers: {e}")
 
 if fednet_app:
     app.mount("/fednet", fednet_app)

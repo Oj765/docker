@@ -23,3 +23,11 @@ prometheus-fastapi-instrumentator>=6.0.0
 easyocr>=1.7.0
 openai-whisper>=20231117
 ffmpeg-python>=0.2.0
+
+# Deepfake dependencies
+torch==2.2.0
+torchvision==0.17.0
+facenet-pytorch==2.5.3
+av==12.0.0
+Pillow>=10.0.0
+numpy>=1.24.0
