@@ -93,7 +93,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_URI=mongodb+srv://vaibhavpaiedu_db_user:rNmK0B4GsZNNNlpu@cluster-hacknova.b9nbngo.mongodb.net/
       - MONGO_DB=misinfoshield
       - REDIS_URL=redis://redis:6379/0
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
