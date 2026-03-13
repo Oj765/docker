@@ -1,0 +1,34 @@
+{
+  "claim_id": "test_live_001",
+  "label": "FALSE",
+  "confidence": 0.6,
+  "risk_score": 0.8500000000000001,
+  "reasoning_chain": [
+    "Ingest: Received claim from twitter and initialized pipeline state.",
+    "Translate: Detected English. No translation needed.",
+    "Extract: Reduced input into 1 checkable claim(s).",
+    "Dedup: High similarity (0.99) with past claim demo_health_001. Linked as mutation.",
+    "Verify: Queried trusted sources for 'Drinking bleach cures all viral illnesses according to a leaked government document.' and found FCAT=0, search=0, official=1 results.",
+    "Verify: Retained 1 unique evidence item(s) after deduplication.",
+    "Score: Estimated 6h reach at 107499 and set confidence to 0.20 from 1 evidence source(s).",
+    "Score: Assigned CRITICAL severity with risk score 0.85; auto-response recommendation=no.",
+    "Verdict: Used Groq (Llama 3.3 70B) for final evaluation.",
+    "LLM Evaluation:",
+    "Step 1: I evaluated the claim against the provided government dataset from data.gov.in, which is a highly credible source with a credibility score of 1.0.",
+    "Step 2: The dataset explicitly states that the claim about drinking bleach curing all viral illnesses does not align with registered national health statistics, thereby contradicting the claim directly."
+  ],
+  "evidence_sources": [
+    {
+      "url": "https://data.gov.in/ministrydepartment/ministry-health-and-family-welfare",
+      "title": "Data.gov.in Health Dataset Search",
+      "credibility_score": 1.0,
+      "excerpt": "According to official open data records, the circulating claim does not align with registered national health statistics."
+    }
+  ],
+  "satire_flag": false,
+  "language": "en",
+  "mutation_of": "demo_health_001",
+  "predicted_6h_reach": 107499,
+  "severity_rating": "CRITICAL",
+  "processed_at": "2026-03-13T14:57:18.997055+00:00"
+}

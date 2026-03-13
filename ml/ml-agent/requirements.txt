@@ -1,0 +1,72 @@
+# ============================================
+# Misinfo Shield — ML/AI Agent Dependencies
+# ============================================
+# System: RTX 4050 6GB VRAM | 16GB RAM | i5 13th Gen | CUDA 12.3
+#
+# INSTALL ORDER:
+#   1. pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+#   2. pip install -r requirements.txt
+#   3. python -m spacy download en_core_web_sm
+# ============================================
+
+# ---------- Agent Orchestration ----------
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# ---------- LLM Backbone ----------
+# Groq (primary — free tier, ultra-fast inference via LPU)
+groq>=0.11.0
+# Gemini (fallback — free tier)
+google-genai>=1.0.0
+
+# ---------- NLP & Embeddings ----------
+# spaCy: ~15MB model (en_core_web_sm) — no VRAM issue
+spacy>=3.7.0
+# sentence-transformers: all-MiniLM-L6-v2 = ~80MB — fits easily in 6GB VRAM
+sentence-transformers>=3.0.0
+langdetect>=1.0.9
+
+# ---------- Vector Store (Semantic Dedup) ----------
+chromadb>=0.4.24
+
+# ---------- Graph Database (Narrative/Campaign) ----------
+neo4j>=5.25.0
+
+# ---------- ML Models ----------
+# XGBoost: CPU-only, no VRAM needed
+xgboost>=2.1.0
+scikit-learn>=1.5.0
+numpy>=1.26.0
+pandas>=2.2.0
+
+# ---------- Translation (Multilingual) ----------
+# NLLB-200-distilled-600M: ~2.4GB model
+# ⚠️  LAZY-LOAD ONLY — do not load at startup
+# With 6GB VRAM, load to GPU only when needed, then unload
+transformers>=4.45.0
+sentencepiece>=0.2.0
+
+# ---------- PyTorch ----------
+# ⚠️  DO NOT install torch from this file!
+# Install separately with CUDA: 
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# Default pip install gets CPU-only which wastes your RTX 4050
+
+# ---------- Kafka Integration ----------
+aiokafka>=0.11.0
+
+# ---------- Async HTTP (API calls) ----------
+httpx>=0.27.0
+aiohttp>=3.10.0
+
+# ---------- External APIs ----------
+ddgs>=9.0.0
+wikipedia-api>=0.6.0
+
+# ---------- Utilities ----------
+fastapi>=0.110.0
+uvicorn>=0.29.0
+python-dotenv>=1.0.0
+pydantic>=2.9.0
+tenacity>=9.0.0
+structlog>=24.4.0

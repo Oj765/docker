@@ -1,0 +1,159 @@
+[33mcommit ff9fb4e3ad8c10ac45ffbbe442bea5ecde1c130a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: Mridul287 <mridultripathi1810@gmail.com>
+Date:   Fri Mar 13 23:03:49 2026 +0530
+
+    Initial push of integrated project to Misinfo-fraud repository
+
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex e5161ee..70f2af4 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -6,6 +6,8 @@[m [myarn-debug.log*[m
+ yarn-error.log*[m
+ pnpm-debug.log*[m
+ lerna-debug.log*[m
+[32m+[m[32m__pycache__/[m
+[32m+[m[32m*.py[cod][m
+ [m
+ node_modules[m
+ dist[m
+[1mdiff --git a/ml b/ml[m
+[1mdeleted file mode 160000[m
+[1mindex a02c7d6..0000000[m
+[1m--- a/ml[m
+[1m+++ /dev/null[m
+[36m@@ -1 +0,0 @@[m
+[31m-Subproject commit a02c7d6d8454d1e87858fa2433d2de8cf3b9661f[m
+[1mdiff --git a/ml/aiml.md b/ml/aiml.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..b167741[m
+[1m--- /dev/null[m
+[1m+++ b/ml/aiml.md[m
+[36m@@ -0,0 +1,394 @@[m
+[32m+[m[32m# Misinfo Shield — ML/AI Implementation Plan[m
+[32m+[m
+[32m+[m[32m> Extracted from `instruction.md` (ML / AI Engineer section, lines 227–479) and cross-referenced with `problem_statement.txt`.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## Problem Statement Recap[m
+[32m+[m
+[32m+[m[32mBuild a **real-time misinformation detection agent** that:[m
+[32m+[m[32m1. Monitors social media feeds for viral, harmful claims[m
+[32m+[m[32m2. Cross-references claims against trusted national databases[m
+[32m+[m[32m3. Generates structured fact-check reports (claim, evidence, citations, severity)[m
+[32m+[m[32m4. Posts corrective, evidence-based responses when confidence + virality thresholds are met[m
+[32m+[m[32m5. Logs every response with a confidence score for human audit/override[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## Tech Stack (ML/AI Scope)[m
+[32m+[m
+[32m+[m[32m| Component | Technology |[m
+[32m+[m[32m|---|---|[m
+[32m+[m[32m| Agent Orchestration | **LangGraph** (multi-step agent with memory, tool nodes, rollback) |[m
+[32m+[m[32m| LLM Backbone | **Claude claude-sonnet-4-20250514** (Anthropic SDK) |[m
+[32m+[m[32m| NLP | **spaCy** + **sentence-transformers** (all-MiniLM-L6-v2) |[m
+[32m+[m[32m| Vector Store | **Pinecone** (semantic dedup + claim similarity) |[m
+[32m+[m[32m| Graph DB | **Neo4j AuraDB** (narrative/campaign detection) |[m
+[32m+[m[32m| Amplification Model | **XGBoost** (virality/reach prediction) |[m
+[32m+[m[32m| Translation | **Meta NLLB-200-distilled-600M** |[m
+[32m+[m[32m| Multimodal | **Whisper** (audio transcription), **EasyOCR** (image text) |[m
+[32m+[m[32m| External APIs | Google Fact Check Tools API, Tavily API, NewsAPI, WHO API |[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## Step-by-Step Implementation Tasks[m
+[32m+[m
+[32m+[m[32m### Phase 1 — Foundation & Schema (H0–H6)[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 1.1: Define `AgentState` TypedDict** (`agent/state.py`)[m
+[32m+[m[32m  - Fields: `claim_id`, `original_text`, `translated_text`, `language`, `claims_extracted`, `evidence`, `verdict`, `risk_score`, `confidence`, `reasoning_chain`, `satire_flag`, `mutation_of`, `predicted_6h_reach`, `processed_at`[m
+[32m+[m[32m  - This IS the contract shared with the Full-Stack Dev and Backend[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 1.2: Create Verdict JSON Schema** (Pydantic model)[m
+[32m+[m[32m  ```[m
+[32m+[m[32m  { claim_id, label (FALSE|MISLEADING|UNVERIFIED|TRUE), confidence (0-1),[m
+[32m+[m[32m    risk_score (0-1), reasoning_chain[], evidence_sources[{url, title,[m
+[32m+[m[32m    credibility_score, excerpt}], satire_flag, language, mutation_of,[m
+[32m+[m[32m    predicted_6h_reach, processed_at }[m
+[32m+[m[32m  ```[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 1.3: Build LangGraph skeleton** (`agent/graph.py`)[m
+[32m+[m[32m  - Register all 9 node names (ingest → extract → translate → dedup → verify → score → guardrail → verdict → output)[m
+[32m+[m[32m  - Define edges and conditional routing[m
+[32m+[m[32m  - Empty node functions — fill logic node by node[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 1.4: Write LLM prompts** (`prompts/`)[m
+[32m+[m[32m  - `verdict_system.txt` — fact-checker system prompt (conservative: use UNVERIFIED if weak evidence)[m
+[32m+[m[32m  - `claim_extract.txt` — atomic claim extraction prompt[m
+[32m+[m[32m  - `red_team_system.txt` — adversarial variant generator prompt[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 1.5: Set up `requirements.txt`**[m
+[32m+[m[32m  - langgraph, anthropic, spacy, sentence-transformers, pinecone-client, neo4j, xgboost, langdetect, nllb (transformers), whisper, easyocr, httpx, aiokafka, etc.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m### Phase 2 — NLP Extraction & Kafka Integration (H6–H14)[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 2.1: Implement `ingest_node`** (`nodes/ingest.py`)[m
+[32m+[m[32m  - Async Kafka consumer from `normalized_claims` topic[m
+[32m+[m[32m  - Parse incoming message into `AgentState`[m
+[32m+[m[32m  - Log with timestamp + topic + partition offset[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 2.2: Implement `extract_node`** (`nodes/extract.py`)[m
+[32m+[m[32m  - spaCy NER + dependency parsing to extract atomic checkable claims[m
+[32m+[m[32m  - One claim = one verifiable factual statement[m
+[32m+[m[32m  - Use sentence-transformers (all-MiniLM-L6-v2) for claim embeddings[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m### Phase 3 — LLM Agent: Claim Extraction & Verdict (H10–H22)[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 3.1: Implement `verdict_node`** (`nodes/verdict.py`)[m
+[32m+[m[32m  - Call Claude claude-sonnet-4-20250514 via Anthropic SDK with `verdict_system.txt` prompt[m
+[32m+[m[32m  - Input: claim text + all gathered evidence[m
+[32m+[m[32m  - Output: structured JSON matching verdict schema[m
+[32m+[m[32m  - Must include fallback for API rate-limits[m
+[32m+[m[32m  - Must be async[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 3.2: Implement `output_node`** (`nodes/output.py`)[m
+[32m+[m[32m  - Serialize verdict to JSON[m
+[32m+[m[32m  - Publish to Kafka `verdict_ready` topic via aiokafka[m
+[32m+[m[32m  - Log the full reasoning chain for auditability[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m### Phase 4 — Verification Toolkit (H14–H24)[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 4.1: Google Fact Check Tools API wrapper** (`tools/fact_check_api.py`)[m
+[32m+[m[32m  - Async httpx calls — NO synchronous requests[m
+[32m+[m[32m  - Return: matching fact-checks with source, rating, URL[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 4.2: Tavily Search API wrapper** (`tools/tavily_search.py`)[m
+[32m+[m[32m  - Async search for supporting/contradicting evidence[m
+[32m+[m[32m  - Return: relevant articles with title, url, excerpt, credibility[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 4.3: WHO / CDC API wrapper** (`tools/who_api.py`)[m
+[32m+[m[32m  - Query against health-related databases[m
+[32m+[m[32m  - Return: official statements, data, source URLs[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 4.4: Implement `verify_node`** (`nodes/verify.py`)[m
+[32m+[m[32m  - Call all 3 tools in **parallel** via `asyncio.gather`[m
+[32m+[m[32m  - Never sequential — this is a hard rule[m
+[32m+[m[32m  - Aggregate results into evidence list with credibility scores[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m### Phase 5 — Confidence & Risk Scoring (H22–H30)[m
+[32m+[m
+[32m+[m[32m- [ ] **Task 5.1: Implement `score_node`** (`nodes/score.py`)[m
+[32m+[m[32m  - Compute `confidence` (0–1): based on evidence strength, source count, source credibility[m
+[32m+[m[32m  - Compute `risk_score` (0–1): based on virality signals, claim severity, topic sensitivity[m
+[32m+[m[32m  - Both scores feed into the verdict and the frontend severity display[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m### Phase 6 — Satire/Tone/Dedup Filters (H24–H32)[m
+[32m+[m
+[32m+[m[32m

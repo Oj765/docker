@@ -1,0 +1,4 @@
+Extract the core checkable factual assertions from the following text.
+Ignore opinions and rhetoric.
+
+Output format: Return each claim on a new line.

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Misinfo Shield</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f5f6f8;
+      color: #333333;
+      font-size: 13px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    .header h1 {
+      font-size: 18px; 
+      font-weight: 600;
+      color: #24292e;
+      letter-spacing: -0.5px;
+    }
+    .header .sub { 
+      font-size: 12px; 
+      color: #6a737d; 
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* Input */
+    .input-box {
+      width: 100%;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #d1d5da;
+      border-radius: 6px;
+      color: #24292e;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.2s;
+      box-shadow: inset 0 1px 2px rgba(27,31,35,0.075);
+    }
+    .input-box:focus { outline: none; border-color: #0366d6; box-shadow: 0 0 0 3px rgba(3,102,214,0.3); }
+    .input-box::placeholder { color: #959da5; }
+
+    .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+
+    .btn {
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-go {
+      flex: 1;
+      background: #0366d6;
+      color: #ffffff;
+      border-color: #0366d6;
+    }
+    .btn-go:hover { background: #005cc5; border-color: #005cc5; }
+    .btn-go:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .btn-clear {
+      flex: 0.3;
+      background: #f3f4f6;
+      color: #444d56;
+      border-color: #d1d5da;
+    }
+    .btn-clear:hover { background: #e1e4e8; border-color: #c6cbd1; }
+
+    /* Status */
+    .status {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border: 1px solid #d1d5da;
+      border-radius: 6px;
+      font-size: 12px; color: #586069;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid #e1e4e8;
+      border-top-color: #0366d6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result Card */
+    .result { margin-top: 20px; }
+
+    /* Verdict Badge */
+    .badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      border: 1px solid #d1d5da;
+      background: #ffffff;
+    }
+    .badge-label { 
+      font-size: 22px; 
+      font-weight: 700; 
+      letter-spacing: 1px;
+    }
+    
+    .badge.false  { background: #ffeef0; border-color: #fdaeb7; }
+    .badge.false .badge-label  { color: #d73a49; }
+    
+    .badge.true   { background: #eafeea; border-color: #85e89d; }
+    .badge.true .badge-label   { color: #22863a; }
+    
+    .badge.misleading { background: #fffbdd; border-color: #f9d0c4; }
+    .badge.misleading .badge-label { color: #b08800; }
+    
+    .badge.unverified { background: #f1f8ff; border-color: #c8e1ff; }
+    .badge.unverified .badge-label { color: #0366d6; }
+
+    /* Metrics (Flat colors instead of gradients) */
+    .metrics { display: flex; gap: 16px; margin-bottom: 16px; }
+    .metric { flex: 1; }
+    .metric-lbl { font-size: 11px; color: #586069; margin-bottom: 6px; display: block; font-weight: 500; text-transform: uppercase; }
+    .bar-bg { height: 6px; background: #e1e4e8; border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .bar-conf { background: #0366d6; }
+    .bar-risk { background: #d73a49; }
+    .metric-val { font-size: 12px; font-weight: 600; color: #24292e; }
+
+    /* Tags */
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tag {
+      padding: 4px 10px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #444d56;
+      border: 1px solid #d1d5da;
+    }
+    .tag.critical { background: #ffeef0; border-color: #fdaeb7; color: #d73a49; }
+    .tag.high     { background: #fffbdd; border-color: #f9d0c4; color: #b08800; }
+
+    /* Detail Blocks */
+    .section-block {
+      background: #ffffff;
+      border: 1px solid #d1d5da;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .section-title {
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #24292e;
+      background: #f6f8fa;
+      border-bottom: 1px solid #e1e4e8;
+    }
+
+    .chain-list {
+      padding: 10px 12px 10px 32px;
+      font-size: 12px;
+      color: #444d56;
+      line-height: 1.5;
+    }
+    .chain-list li { margin-bottom: 6px; }
+
+    .ev-list { list-style: none; padding: 0; }
+    .ev-item { padding: 10px 12px; border-bottom: 1px solid #e1e4e8; }
+    .ev-item:last-child { border: none; }
+    
+    .ev-meta-row { display: flex; align-items: center; margin-bottom: 4px; }
+    .ev-cred {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background: #f1f8ff;
+      color: #0366d6;
+      border: 1px solid #c8e1ff;
+      margin-right: 6px;
+    }
+    .ev-type { font-size: 10px; color: #6a737d; text-transform: uppercase; }
+    .ev-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: #0366d6;
+      text-decoration: none;
+      display: block;
+      line-height: 1.4;
+    }
+    .ev-title:hover { text-decoration: underline; }
+
+    /* Meta row */
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #6a737d;
+      margin-top: 12px;
+      padding: 0 4px;
+    }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      padding-top: 12px;
+      font-size: 11px;
+      color: #959da5;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot.online  { background: #28a745; }
+    .dot.offline { background: #d73a49; }
+
+    .hidden { display: none !important; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f5f6f8; }
+    ::-webkit-scrollbar-thumb { background: #c6cbd1; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Misinfo Shield</h1>
+    <span class="sub">Local Fact-Checking Agent</span>
+  </div>
+
+  <!-- Input -->
+  <textarea id="input" class="input-box" placeholder="Enter claim to verify..." rows="3"></textarea>
+  <div class="btn-row">
+    <button id="go" class="btn btn-go">Analyze Claim</button>
+    <button id="clear" class="btn btn-clear">Clear</button>
+  </div>
+
+  <!-- Status -->
+  <div id="status" class="status hidden">
+    <div class="spinner"></div>
+    <span id="status-txt">Analyzing...</span>
+  </div>
+
+  <!-- Result -->
+  <div id="result" class="result hidden">
+
+    <div id="badge" class="badge">
+      <div id="badge-label" class="badge-label">--</div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-lbl">Confidence</span>
+        <div class="bar-bg"><div id="conf-bar" class="bar-fill bar-conf" style="width:0%"></div></div>
+        <span id="conf-val" class="metric-val">0%</span>
+      </div>
+      <div class="metric">
+        <span class="metric-lbl">Risk Score</span>
+        <div class="bar-bg"><div id="risk-bar" class="bar-fill bar-risk" style="width:0%"></div></div>
+        <span id="risk-val" class="metric-val">0%</span>
+      </div>
+    </div>
+
+    <div id="tags" class="tags"></div>
+
+    <!-- Reasoning -->
+    <div class="section-block">
+      <div class="section-title">Analysis Steps (<span id="chain-n">0</span>)</div>
+      <ol id="chain" class="chain-list"></ol>
+    </div>
+
+    <!-- Evidence -->
+    <div class="section-block">
+      <div class="section-title">Sources Evaluated (<span id="ev-n">0</span>)</div>
+      <ul id="ev" class="ev-list"></ul>
+    </div>
+
+    <div class="meta-row">
+      <span id="m-reach"></span>
+      <span id="m-lang"></span>
+      <span id="m-time"></span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Pipeline: Localhost</span>
+    <span id="dot" class="dot offline" title="Checking..."></span>
+  </div>
+
+</div>
+
+<script>
+const API = ""; 
+const $ = s => document.querySelector(s);
+
+const input = $("#input"), goBtn = $("#go"), clearBtn = $("#clear");
+const statusEl = $("#status"), statusTxt = $("#status-txt");
+const resultEl = $("#result");
+
+// Health check
+async function ping() {
+  try {
+    const r = await fetch(`${API}/health`);
+    if (r.ok) { $("#dot").className = "dot online"; return true; }
+  } catch(e) {}
+  $("#dot").className = "dot offline";
+  return false;
+}
+
+clearBtn.onclick = () => { input.value = ""; resultEl.classList.add("hidden"); };
+
+goBtn.onclick = async () => {
+  const text = input.value.trim();
+  if (!text || text.length < 5) { return; }
+
+  goBtn.disabled = true;
+  statusEl.classList.remove("hidden");
+  resultEl.classList.add("hidden");
+  statusTxt.textContent = "Querying evidence sources...";
+
+  if (!(await ping())) { statusTxt.textContent = "API offline."; goBtn.disabled = false; return; }
+
+  try {
+    const r = await fetch(`${API}/analyze`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ claim_text: text, source_platform: "panel" }),
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    show(await r.json());
+  } catch(e) {
+    statusTxt.textContent = "Error: " + e.message;
+  } finally { goBtn.disabled = false; }
+};
+
+function show(v) {
+  statusEl.classList.add("hidden");
+  resultEl.classList.remove("hidden");
+
+  const label = (v.label || "UNVERIFIED").toUpperCase();
+  $("#badge-label").textContent = label;
+  $("#badge").className = "badge " + label.toLowerCase();
+
+  const conf = Math.round((v.confidence||0)*100);
+  const risk = Math.round((v.risk_score||0)*100);
+  $("#conf-bar").style.width = conf+"%"; $("#conf-val").textContent = conf+"%";
+  $("#risk-bar").style.width = risk+"%"; $("#risk-val").textContent = risk+"%";
+
+  // Tags
+  const geo = v.geo_info || {};
+  const severity = v.severity_rating || "LOW";
+  let tagsHTML = `<span class="tag ${severity==='CRITICAL'?'critical':severity==='HIGH'?'high':''}">${severity} risk</span>`;
+  tagsHTML += `<span class="tag">${geo.predicted_region||'Unknown'}</span>`;
+  (geo.topic_tags||[]).slice(0,2).forEach(t => tagsHTML += `<span class="tag">${t}</span>`);
+  if (v.satire_flag) tagsHTML += `<span class="tag critical">SATIRE</span>`;
+  $("#tags").innerHTML = tagsHTML;
+
+  // Reasoning chain
+  const chain = v.reasoning_chain || [];
+  $("#chain-n").textContent = chain.length;
+  $("#chain").innerHTML = chain.map(s => `<li>${s.length>140?s.slice(0,137)+'...':s}</li>`).join("");
+
+  // Evidence
+  const src = v.evidence_sources || [];
+  $("#ev-n").textContent = src.length;
+  $("#ev").innerHTML = src.map(s => {
+    const title = (s.title||"Unknown Source").slice(0,70);
+    return `<li class="ev-item">
+      <div class="ev-meta-row">
+        <span class="ev-cred">Score: ${(s.credibility_score||0).toFixed(1)}</span>
+        <span class="ev-type">${s.source_type||'web'}</span>
+      </div>
+      <a class="ev-title" href="${s.url||'#'}" target="_blank">${title}</a>
+    </li>`;
+  }).join("");
+
+  // Meta
+  $("#m-reach").textContent = `Reach: ${(v.predicted_6h_reach||0).toLocaleString()}`;
+  $("#m-lang").textContent = `Lang: ${v.language||'en'}`;
+  $("#m-time").textContent = `Time: ${geo.time_context||'recent'}`;
+}
+
+input.addEventListener("keydown", e => { if (e.ctrlKey && e.key === "Enter") goBtn.click(); });
+ping();
+</script>
+</body>
+</html>

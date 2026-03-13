@@ -1,0 +1,10 @@
+## Problem Statement
+Automated truth-verification system for real-time narrative defense.  
+This system monitors social media feeds to identify viral, harmful claims. It cross-references information against trusted national databases, generates structured fact-check reports, and can be deployed to post corrective, evidence-based responses to stop the spread of misinformation.
+
+## Expected Outcomes
+A real-time misinformation detection agent that monitors social media feeds, reasons about whether a claim is false or misleading, and takes action to counter it before it spreads further. The agent ingests posts as they stream in, extracts the core claim, and cross-references it against trusted sources: government health databases, scientific repositories, verified news APIs.
+
+When a harmful claim crosses a confidence and virality threshold, the agent generates a structured fact-check report: the original claim, the contradicting evidence, source citations, and a severity rating. The operator sees a live feed of flagged claims ranked by risk score, each with the agent's reasoning chain visible showing which sources it checked, what it found, why it acted or held back.
+
+Every posted response is logged with a confidence score so a human reviewer can audit or override.

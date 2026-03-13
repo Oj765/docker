@@ -1,0 +1,32 @@
+# ml-agent/requirements_geo.txt
+# Add these to your existing ml-agent/requirements.txt
+
+geopy==2.4.1
+pycountry==23.12.11
+httpx==0.27.0        # already in most FastAPI setups
+
+
+# backend/requirements_geo.txt
+# Add these to your existing backend/requirements.txt
+
+asyncpg==0.29.0      # async PostgreSQL / TimescaleDB driver — may already be present
+pycountry==23.12.11
+
+
+# frontend — add to package.json dependencies
+# npm install d3 topojson-client world-atlas
+
+# package.json additions:
+# "d3": "^7.9.0",
+# "topojson-client": "^3.1.0"
+# world-atlas is loaded via CDN (cdn.jsdelivr.net/npm/world-atlas@2) — no install needed
+
+
+# .env additions (add to your existing .env.example)
+# ACLED_API_KEY=your_acled_key
+# ACLED_EMAIL=your@email.com
+# ACLED_API_URL=https://api.acleddata.com/acled/read
+# GDELT_API_URL=https://api.gdeltproject.org/api/v2/geo/geo
+# WHO_OUTBREAK_URL=https://www.who.int/api/news/emergencies
+# INTERNAL_SECRET=changeme-internal-secret
+# BACKEND_INTERNAL_URL=http://backend:8000
