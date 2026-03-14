@@ -1,35 +1,50 @@
+# Add the ML agent to sys.path — use absolute Docker path first, fallback to relative
 import sys
 import os
 import uuid
+import hashlib
 import logging
+import asyncio
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel
 from typing import Optional, List
 
-logger = logging.getLogger(__name__)
+from fastapi import APIRouter, Request, HTTPException
+from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analyze", tags=["analyze"])
 
-# Add the ML agent to sys.path so we can import from it
-ML_AGENT_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "ml", "ml-agent")
-)
-if ML_AGENT_PATH not in sys.path:
-    sys.path.insert(0, ML_AGENT_PATH)
+# Docker absolute path (WORKDIR is /app, ml is copied to /app/ml/)
+DOCKER_ML_PATH = '/app/ml/ml-agent'
+if os.path.isdir(DOCKER_ML_PATH):
+    for _p in [DOCKER_ML_PATH,
+                os.path.join(DOCKER_ML_PATH, 'nodes'),
+                os.path.join(DOCKER_ML_PATH, 'tools'),
+                os.path.join(DOCKER_ML_PATH, 'models')]:
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+else:
+    _ML = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'ml', 'ml-agent'))
+    for _sub in ['', 'nodes', 'tools', 'models']:
+        _p = os.path.join(_ML, _sub) if _sub else _ML
+        if os.path.isdir(_p) and _p not in sys.path:
+            sys.path.insert(0, _p)
 
-FEDNET_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..")
-)
+FEDNET_PATH = '/app' if os.path.isdir('/app/federated_network') else os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 if FEDNET_PATH not in sys.path:
     sys.path.insert(0, FEDNET_PATH)
 
-from federated_network.integration import FederatedNetworkAdapter
+try:
+    from federated_network.integration import FederatedNetworkAdapter
+except Exception:
+    FederatedNetworkAdapter = None
 
 fednet_adapter = FederatedNetworkAdapter(
     base_url=os.getenv("FEDNET_URL", "http://127.0.0.1:8000"),
     node_id=os.getenv("FEDNET_NODE_ID", "node-local")
-)
+) if FederatedNetworkAdapter else None
+
 
 
 class AnalyzeRequest(BaseModel):
@@ -60,8 +75,6 @@ async def analyze_claim(body: AnalyzeRequest, request: Request):
 
     # Check Redis dedup first before running expensive ML pipeline
     from app.services.redis_dedup import redis_dedup
-    # Use a hash of the text as the dedup key for manual submissions
-    import hashlib
     text_hash = hashlib.sha256(body.text.encode()).hexdigest()[:16]
     is_dup = await redis_dedup.is_duplicate(f"text:{text_hash}")
     if is_dup:
@@ -127,17 +140,17 @@ async def analyze_claim(body: AnalyzeRequest, request: Request):
         return AnalyzeResponse(success=False, data=None, error="ML pipeline returned no verdict.")
 
     # INJECTION POINT 1 - FEDERATED NETWORK
-    import asyncio
     try:
-        asyncio.create_task(
-            fednet_adapter.publish_detection(
-                claim_text_normalized=body.text,
-                embedding=[],
-                confidence=float(verdict.get("confidence", 0.0)),
-                category=str(verdict.get("category", "other")),
-                verdict_label=str(verdict.get("label", "UNVERIFIED"))
+        if fednet_adapter:
+            asyncio.create_task(
+                fednet_adapter.publish_detection(
+                    claim_text_normalized=body.text,
+                    embedding=[],
+                    confidence=float(verdict.get("confidence", 0.0)),
+                    category=str(verdict.get("category", "other")),
+                    verdict_label=str(verdict.get("label", "UNVERIFIED"))
+                )
             )
-        )
     except Exception as e:
         logger.warning(f"Error publishing to federated network: {e}")
 

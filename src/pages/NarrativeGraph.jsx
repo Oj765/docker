@@ -48,18 +48,18 @@ const DEMO_DATA = {
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const SEVERITY_COLOR = {
-  CRITICAL: '#ff2244',
-  HIGH:     '#ff8800',
-  MEDIUM:   '#ffd700',
-  LOW:      '#22c97c',
+  CRITICAL: '#ef4444',
+  HIGH:     '#f87171',
+  MEDIUM:   '#4ade80',
+  LOW:      '#22c55e',
   default:  '#888',
 };
 const LINK_COLOR = {
-  POSTED:    '#60a5fa',
-  AMPLIFIED: '#ff6b8a',
-  MUTATION:  '#c084fc',
+  POSTED:    '#22c55e',
+  AMPLIFIED: '#ef4444',
+  MUTATION:  '#b91c1c',
 };
-const ACC_COLOR  = '#2cf3e0';
+const ACC_COLOR  = '#16a34a';
 
 function severityColor(s) { return SEVERITY_COLOR[s?.toUpperCase()] || SEVERITY_COLOR.default; }
 
@@ -75,28 +75,29 @@ function StatsPanel({ data }) {
   const row = (color, label, val) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}` }} />
-        <span style={{ fontSize: 12, color: '#b0b8cc' }}>{label}</span>
+        <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}88` }} />
+        <span style={{ fontSize: 12, color: '#475569' }}>{label}</span>
       </div>
-      <span style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>{val}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{val}</span>
     </div>
   );
 
   return (
     <div style={{
       position: 'absolute', top: 80, right: 16, zIndex: 20, width: 200,
-      background: 'rgba(8,8,20,0.88)', border: '1px solid rgba(124,58,237,0.35)',
+      background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(0,0,0,0.1)',
       borderRadius: 12, padding: '14px 16px', backdropFilter: 'blur(14px)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
     }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Graph Stats</div>
-      {row('#e2e8f0',   'Total Nodes',   data.nodes.length)}
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Graph Stats</div>
+      {row('#94a3b8',   'Total Nodes',   data.nodes.length)}
       {row(ACC_COLOR,   'Accounts',      accounts.length)}
-      {row('#60a5fa',   'Claims',        claims.length)}
+      {row(LINK_COLOR.POSTED,   'Claims',        claims.length)}
       {row(SEVERITY_COLOR.CRITICAL, 'Critical',  critical)}
       {row(SEVERITY_COLOR.HIGH,     'High Risk', high)}
       {row(SEVERITY_COLOR.MEDIUM,   'Medium',    medium)}
-      {row('#ff6b8a',  'Burst Links',  bursts)}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 10, paddingTop: 10 }}>
+      {row(LINK_COLOR.AMPLIFIED,  'Burst Links',  bursts)}
+      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', marginTop: 10, paddingTop: 10 }}>
         {row(LINK_COLOR.POSTED,    'Posted',    data.links.filter(l=>l.type==='POSTED').length)}
         {row(LINK_COLOR.AMPLIFIED, 'Amplified', data.links.filter(l=>l.type==='AMPLIFIED').length)}
         {row(LINK_COLOR.MUTATION,  'Mutation',  data.links.filter(l=>l.type==='MUTATION').length)}
@@ -121,18 +122,19 @@ function Legend() {
   return (
     <div style={{
       position: 'absolute', bottom: 16, left: 16, zIndex: 20,
-      background: 'rgba(8,8,20,0.88)', border: '1px solid rgba(124,58,237,0.3)',
+      background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(0,0,0,0.1)',
       borderRadius: 10, padding: '12px 16px', backdropFilter: 'blur(12px)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
     }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>Legend</div>
-      <div style={s}>{dot(ACC_COLOR, 'circle')}<span style={{fontSize:11,color:'#b0b8cc'}}>Account Node</span></div>
-      <div style={s}>{dot(SEVERITY_COLOR.CRITICAL,'diamond')}<span style={{fontSize:11,color:'#b0b8cc'}}>CRITICAL Claim</span></div>
-      <div style={s}>{dot(SEVERITY_COLOR.HIGH,'diamond')}<span style={{fontSize:11,color:'#b0b8cc'}}>HIGH Claim</span></div>
-      <div style={s}>{dot(SEVERITY_COLOR.MEDIUM,'diamond')}<span style={{fontSize:11,color:'#b0b8cc'}}>MEDIUM Claim</span></div>
-      <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', margin:'8px 0' }} />
-      <div style={s}><div style={{width:22,height:2,background:LINK_COLOR.POSTED,borderRadius:1}}/><span style={{fontSize:11,color:'#b0b8cc'}}>Posted</span></div>
-      <div style={s}><div style={{width:22,height:2,background:LINK_COLOR.AMPLIFIED,borderRadius:1}}/><span style={{fontSize:11,color:'#b0b8cc'}}>Amplified</span></div>
-      <div style={s}><div style={{width:22,height:2,background:LINK_COLOR.MUTATION,borderRadius:1}}/><span style={{fontSize:11,color:'#b0b8cc'}}>Mutation</span></div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>Legend</div>
+      <div style={s}>{dot(ACC_COLOR, 'circle')}<span style={{fontSize:11,color:'#475569'}}>Account Node</span></div>
+      <div style={s}>{dot(SEVERITY_COLOR.CRITICAL,'diamond')}<span style={{fontSize:11,color:'#475569'}}>CRITICAL Claim</span></div>
+      <div style={s}>{dot(SEVERITY_COLOR.HIGH,'diamond')}<span style={{fontSize:11,color:'#475569'}}>HIGH Claim</span></div>
+      <div style={s}>{dot(SEVERITY_COLOR.MEDIUM,'diamond')}<span style={{fontSize:11,color:'#475569'}}>MEDIUM Claim</span></div>
+      <div style={{ borderTop:'1px solid rgba(0,0,0,0.08)', margin:'8px 0' }} />
+      <div style={s}><div style={{width:22,height:2,background:LINK_COLOR.POSTED,borderRadius:1}}/><span style={{fontSize:11,color:'#475569'}}>Posted</span></div>
+      <div style={s}><div style={{width:22,height:2,background:LINK_COLOR.AMPLIFIED,borderRadius:1}}/><span style={{fontSize:11,color:'#475569'}}>Amplified</span></div>
+      <div style={s}><div style={{width:22,height:2,background:LINK_COLOR.MUTATION,borderRadius:1}}/><span style={{fontSize:11,color:'#475569'}}>Mutation</span></div>
     </div>
   );
 }
@@ -214,56 +216,41 @@ export default function NarrativeGraph3D() {
 
   const nodeLabel = useCallback((node) => {
     if (node.type === 'account') {
-      return `<div style="background:rgba(4,4,16,0.92);padding:8px 12px;border-radius:6px;border:1px solid #2cf3e0;font-family:sans-serif">
-        <b style="color:#2cf3e0">${node.label}</b><br/>
-        <span style="color:#888;font-size:11px">Platform: ${node.platform} &nbsp;|&nbsp; Role: ${node.role}</span><br/>
-        <span style="color:#ccc;font-size:11px">Followers: ${(node.followers||0).toLocaleString()}</span>
+      return `<div style="background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:6px;border:1px solid ${ACC_COLOR};font-family:sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+        <b style="color:${ACC_COLOR}">${node.label}</b><br/>
+        <span style="color:#64748b;font-size:11px">Platform: ${node.platform} &nbsp;|&nbsp; Role: ${node.role}</span><br/>
+        <span style="color:#475569;font-size:11px">Followers: ${(node.followers||0).toLocaleString()}</span>
       </div>`;
     }
     const c = severityColor(node.severity);
-    return `<div style="background:rgba(4,4,16,0.92);padding:8px 12px;border-radius:6px;border:1px solid ${c};font-family:sans-serif;max-width:220px">
+    return `<div style="background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:6px;border:1px solid ${c};font-family:sans-serif;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
       <b style="color:${c}">${node.severity} CLAIM</b><br/>
-      <span style="color:#ddd;font-size:12px;line-height:1.4">${node.label}</span><br/>
-      <span style="color:#888;font-size:11px;margin-top:4px;display:block">Verdict: ${node.verdict||'UNVERIFIED'} &nbsp;|&nbsp; Risk: ${((node.risk_score||0)*100).toFixed(0)}%</span>
+      <span style="color:#1e293b;font-size:12px;line-height:1.4">${node.label}</span><br/>
+      <span style="color:#64748b;font-size:11px;margin-top:4px;display:block">Verdict: ${node.verdict||'UNVERIFIED'} &nbsp;|&nbsp; Risk: ${((node.risk_score||0)*100).toFixed(0)}%</span>
     </div>`;
   }, []);
 
-  const filterSel = { background: 'rgba(10,10,28,0.9)', color: '#e2e8f0', border: '1px solid rgba(124,58,237,0.45)', padding: '5px 10px', borderRadius: 6, outline: 'none', fontSize: 12, cursor: 'pointer' };
-  const optStyle  = { background: '#10101c' };
+  const filterSel = { background: '#ffffff', color: '#1e293b', border: '1px solid rgba(0,0,0,0.15)', padding: '5px 10px', borderRadius: 6, outline: 'none', fontSize: 12, cursor: 'pointer' };
+  const optStyle  = { background: '#ffffff', color: '#1e293b' };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 56px)', overflow: 'hidden', background: '#020210' }}>
-
-      {/* Starfield via CSS */}
-      <style>{`
-        @keyframes twinkle { 0%,100%{opacity:0.2} 50%{opacity:1} }
-        .star { position:absolute; border-radius:50%; background:#fff; animation:twinkle ease-in-out infinite; }
-      `}</style>
-      {Array.from({length:80}).map((_,i)=>(
-        <div key={i} className="star" style={{
-          width: Math.random()*2+1, height: Math.random()*2+1,
-          top:`${Math.random()*100}%`, left:`${Math.random()*100}%`,
-          animationDuration:`${2+Math.random()*4}s`,
-          animationDelay:`${Math.random()*5}s`,
-          opacity: Math.random()*0.6+0.1,
-        }}/>
-      ))}
-
-      {/* Nebula glow blobs */}
-      <div style={{ position:'absolute', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)', top:'10%', left:'20%', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle, rgba(44,243,224,0.08) 0%, transparent 70%)', bottom:'10%', right:'25%', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,34,68,0.07) 0%, transparent 70%)', top:'30%', right:'10%', pointerEvents:'none' }}/>
+    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 56px)', overflow: 'hidden', background: '#f8fafc' }}>
+      
+      {/* Light theme faint background texture/blobs */}
+      <div style={{ position:'absolute', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%)', top:'10%', left:'20%', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle, rgba(239,68,68,0.06) 0%, transparent 70%)', bottom:'10%', right:'25%', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(248,113,113,0.05) 0%, transparent 70%)', top:'30%', right:'10%', pointerEvents:'none' }}/>
 
       {/* Top bar */}
       <div style={{
         position:'absolute', top:0, left:0, right:0, zIndex:30,
-        background:'rgba(2,2,16,0.82)', borderBottom:'1px solid rgba(124,58,237,0.25)',
+        background:'rgba(255,255,255,0.9)', borderBottom:'1px solid rgba(0,0,0,0.08)',
         backdropFilter:'blur(16px)', padding:'10px 20px',
         display:'flex', alignItems:'center', gap:16,
       }}>
         <div style={{ marginRight:'auto' }}>
-          <span style={{ fontWeight:700, fontSize:15, color:'#c084fc', letterSpacing:'0.02em' }}>🕸 Narrative Propagation Graph</span>
-          <span style={{ fontSize:11, color:'#5b6070', marginLeft:12 }}>
+          <span style={{ fontWeight:700, fontSize:15, color:'#1e293b', letterSpacing:'0.02em' }}>🕸 Narrative Propagation Graph</span>
+          <span style={{ fontSize:11, color:'#64748b', marginLeft:12 }}>
             {graphData.nodes.length} nodes · {graphData.links.length} links
             {loading && ' · updating...'}
           </span>
@@ -287,13 +274,13 @@ export default function NarrativeGraph3D() {
         nodeLabel={nodeLabel}
         nodeThreeObject={nodeThreeObject}
         nodeThreeObjectExtend={false}
-        linkColor={link => LINK_COLOR[link.type] || '#555'}
-        linkWidth={link => link.type === 'MUTATION' ? 2 : link.type === 'AMPLIFIED' ? 1.5 : 1}
-        linkOpacity={0.75}
+        linkColor={link => LINK_COLOR[link.type] || '#888'}
+        linkWidth={link => link.type === 'MUTATION' ? 2.5 : link.type === 'AMPLIFIED' ? 2 : 1.5}
+        linkOpacity={0.9}
         linkDirectionalParticles={link => link.burst_detected ? 5 : link.type === 'MUTATION' ? 2 : 0}
-        linkDirectionalParticleWidth={2.5}
+        linkDirectionalParticleWidth={3}
         linkDirectionalParticleSpeed={0.006}
-        linkDirectionalParticleColor={link => link.burst_detected ? '#ff2244' : LINK_COLOR[link.type] || '#888'}
+        linkDirectionalParticleColor={link => link.burst_detected ? '#b91c1c' : LINK_COLOR[link.type] || '#555'}
         backgroundColor="rgba(0,0,0,0)"
         onNodeClick={node => {
           fgRef.current?.cameraPosition(
@@ -325,7 +312,7 @@ export default function NarrativeGraph3D() {
       {/* Title watermark */}
       <div style={{
         position:'absolute', bottom:16, right:16, zIndex:20,
-        fontSize:11, color:'rgba(124,58,237,0.4)', fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase',
+        fontSize:11, color:'rgba(0,0,0,0.3)', fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase',
       }}>
         Misinfo Shield · Narrative Engine
       </div>

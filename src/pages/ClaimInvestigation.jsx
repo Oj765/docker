@@ -39,22 +39,48 @@ const ClaimInvestigation = () => {
 
     const fetchAnalysis = async () => {
       try {
-        const response = await fetch('http://localhost:8899/analyze', {
+        // First check MongoDB for an existing cached result
+        const claimId = claim.id || claim.claim_id;
+        if (claimId) {
+          const cached = await fetch(`http://localhost:8000/analyze/claim/${claimId}`);
+          if (cached.ok) {
+            const cachedData = await cached.json();
+            if (cachedData.success && cachedData.data?.verdict?.label) {
+              const d = cachedData.data;
+              setAnalysis({
+                label:           d.verdict?.label,
+                confidence:      d.verdict?.confidence,
+                risk_score:      d.risk_score,
+                reasoning_chain: d.verdict?.reasoning_chain || [],
+                evidence_sources:d.verdict?.evidence_sources || [],
+                mutation_of:     d.parent_claim_id,
+                geo_info:        d.geo_info || {},
+              });
+              setIsLoading(false);
+              return;
+            }
+          }
+        }
+
+        // Run the full ML pipeline
+        const response = await fetch('http://localhost:8000/analyze/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            claim_text: claim.claim,
-            source_platform: claim.platform || 'manual'
+            text:     claim.claim,
+            platform: claim.platform || 'manual',
+            account_id: claim.source_org || 'stream_user',
+            post_url: claim.fact_check_url || 'https://manual.entry',
           })
         });
         const data = await response.json();
-        if (data.label) {
-          setAnalysis(data);
+        if (data.success && data.data) {
+          setAnalysis(data.data);
         } else {
-          console.error("Analysis failed:", data);
+          console.error('Analysis failed:', data);
         }
       } catch (err) {
-        console.error("Error fetching analysis:", err);
+        console.error('Error fetching analysis:', err);
       } finally {
         setIsLoading(false);
       }
