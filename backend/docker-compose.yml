@@ -89,7 +89,9 @@ services:
 
   api:
     container_name: api
-    build: .
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -98,6 +100,13 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - TIMESCALEDB_URL=postgresql://postgres:postgres@timescaledb:5432/misinfoshield
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_FCAT_API_KEY=${GOOGLE_FCAT_API_KEY:-}
+      - NEO4J_URI=${NEO4J_URI:-}
+      - NEO4J_USER=${NEO4J_USER:-}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-}
+      - DATAGOV_INDIA_API_KEY=${DATAGOV_INDIA_API_KEY:-}
     depends_on:
       mongo:
         condition: service_healthy
@@ -127,3 +136,18 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+
+  kafka-producer:
+    container_name: kafka-producer
+    image: python:3.10-slim
+    working_dir: /app
+    volumes:
+      - ../streaming_pipeline:/app
+    command: >
+      bash -c "pip install -q kafka-python-ng feedparser && python kafka_producer.py"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: on-failure

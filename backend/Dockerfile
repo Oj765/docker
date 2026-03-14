@@ -10,12 +10,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
+COPY federated_network/requirements.txt federated_network_requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r federated_network_requirements.txt
 
 # Copy application source
-COPY app/ ./app/
+COPY backend/app/ ./app/
+COPY ml/ ./ml/
+COPY federated_network/ ./federated_network/
 
 # Expose port
 EXPOSE 8000

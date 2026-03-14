@@ -37,13 +37,16 @@ FACT_CHECK_FEEDS = [
     }
 ]
 
+import os
+
 def get_kafka_producer():
+    bootstrap = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     try:
         producer = KafkaProducer(
-            bootstrap_servers=['localhost:9092'],
+            bootstrap_servers=[bootstrap],
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
-        print("Connected to Kafka.")
+        print(f"Connected to Kafka at {bootstrap}.")
         return producer
     except Exception as e:
         print(f"Kafka connection failed: {e}")

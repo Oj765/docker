@@ -1,7 +1,7 @@
 # backend/app/routers/geo.py
 # Mount in main.py: app.include_router(geo_router, prefix="/geo", tags=["geo"])
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -11,7 +11,6 @@ from app.services.geo_db import (
     get_timeline,
     get_alignment_breakdown,
 )
-from app.db.mongo import get_db   # your existing motor db accessor
 
 router = APIRouter()
 
@@ -75,7 +74,7 @@ async def heatmap(hours: int = Query(24, ge=1, le=168)):
 
 
 @router.get("/country/{country_code}", response_model=CountryDetailResponse)
-async def country_detail(country_code: str, days: int = Query(7, ge=1, le=90)):
+async def country_detail(country_code: str, request: Request, days: int = Query(7, ge=1, le=90)):
     """
     Full geo detail for a single country:
     - risk timeline (daily)
@@ -84,7 +83,7 @@ async def country_detail(country_code: str, days: int = Query(7, ge=1, le=90)):
     - 10 most recent claims targeting this country
     """
     code = country_code.upper()
-    db   = await get_db()
+    db   = request.app.mongodb
 
     timeline,  alignment = await asyncio.gather(
         get_timeline(code, days),
@@ -119,12 +118,12 @@ async def country_detail(country_code: str, days: int = Query(7, ge=1, le=90)):
 
 
 @router.post("/filter")
-async def filter_claims(params: GeoFilterParams):
+async def filter_claims(params: GeoFilterParams, request: Request):
     """
     Filtered claim list by geo criteria.
     Used by the threat intelligence table on the dashboard.
     """
-    db    = await get_db()
+    db    = request.app.mongodb
     query: dict = {}
 
     if params.country_code:

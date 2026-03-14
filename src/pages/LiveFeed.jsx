@@ -35,7 +35,7 @@ const LiveFeed = () => {
   }, []);
 
   const connectWebSocket = () => {
-    ws.current = new WebSocket('ws://localhost:8001/ws/live-claims');
+    ws.current = new WebSocket('ws://localhost:8000/ws/live-claims');
 
     ws.current.onopen = () => {
       setIsConnected(true);

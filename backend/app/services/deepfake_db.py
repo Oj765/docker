@@ -2,11 +2,7 @@
 # Run once at startup — adds indexes for deepfake queries.
 # Call: await deepfake_db.setup()  inside FastAPI lifespan
 
-from app.db.mongo import get_db
-
-
-async def setup():
-    db = await get_db()
+async def setup(db):
 
     # Fast filter: "show me all deepfake-flagged claims"
     await db.claims.create_index([("media.deepfake_flagged", 1)])
@@ -26,9 +22,8 @@ async def setup():
     print("[deepfake_db] Indexes created")
 
 
-async def get_flagged_claims(limit: int = 50, skip: int = 0) -> list[dict]:
+async def get_flagged_claims(db, limit: int = 50, skip: int = 0) -> list[dict]:
     """Convenience query used by the dashboard deepfake feed."""
-    db = await get_db()
     cursor = (
         db.claims
         .find(

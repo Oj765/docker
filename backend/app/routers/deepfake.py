@@ -3,13 +3,12 @@
 # Mount in main.py:  app.include_router(deepfake_router, prefix="/internal/deepfake")
 
 import os
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
 from app.multimodal.deepfake_scorer import score_video_url, score_image_url
-from app.db.mongo import get_db
 
 router = APIRouter()
 INTERNAL_SECRET = os.getenv("INTERNAL_SECRET", "changeme-internal-secret")
@@ -29,12 +28,13 @@ def _auth(secret: Optional[str]):
 
 @router.post("/video", include_in_schema=False)
 async def deepfake_video(
+    request: Request,
     payload: DeepfakeRequest,
     x_internal_secret: Optional[str] = Header(None),
 ):
     _auth(x_internal_secret)
     result = await score_video_url(payload.media_url)
-    await _write_to_mongo(payload.claim_id, result)
+    await _write_to_mongo(payload.claim_id, result, request.app.mongodb)
     return result
 
 
@@ -42,18 +42,19 @@ async def deepfake_video(
 
 @router.post("/image", include_in_schema=False)
 async def deepfake_image(
+    request: Request,
     payload: DeepfakeRequest,
     x_internal_secret: Optional[str] = Header(None),
 ):
     _auth(x_internal_secret)
     result = await score_image_url(payload.media_url)
-    await _write_to_mongo(payload.claim_id, result)
+    await _write_to_mongo(payload.claim_id, result, request.app.mongodb)
     return result
 
 
 # ── MongoDB writer ────────────────────────────────────────────────────────────
 
-async def _write_to_mongo(claim_id: str, result: dict):
+async def _write_to_mongo(claim_id: str, result: dict, db):
     """
     Writes deepfake result into the claim's media subdocument.
     Uses MongoDB $set so it merges with existing media fields.
@@ -65,7 +66,6 @@ async def _write_to_mongo(claim_id: str, result: dict):
                               claims.media.frame_scores
                               claims.media.deepfake_scored_at
     """
-    db = await get_db()
     await db.claims.update_one(
         {"claim_id": claim_id},
         {"$set": {

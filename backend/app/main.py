@@ -6,6 +6,7 @@ import logging
 import asyncpg
 from app.config import get_settings
 from app.routers import claims, actions, analytics, campaigns, audit, webhooks, analyze, graph, geo
+from app.routers.claims import live_router
 from app.services.kafka_producer import kafka_producer
 from app.services.kafka_consumer import kafka_consumer
 from app.services.redis_dedup import redis_dedup
@@ -61,7 +62,7 @@ async def lifespan(app: FastAPI):
 
     if deepfake_db:
         logger.info("Initializing Deepfake DB...")
-        await deepfake_db.setup()
+        await deepfake_db.setup(app.mongodb)
 
     yield
 
@@ -105,6 +106,7 @@ app.include_router(webhooks.router)
 app.include_router(analyze.router)
 app.include_router(graph.router)
 app.include_router(geo.router, prefix="/geo", tags=["geo"])
+app.include_router(live_router)
 
 try:
     from app.routers.deepfake import router as deepfake_internal_router
